@@ -32,9 +32,10 @@ let compareToIdx     = 1;
 /** @type {import('./data.js').ProcessedGovernor[]} */
 let processed = [];
 
-let kvkName     = '';
-let chartsBuilt = false;
-let activeTab   = 'rankings';
+let kvkName      = '';
+let chartsBuilt  = false;
+let activeTab    = 'rankings';
+let isSharedView = false; // true when loaded via ?bin= or ?d= URL
 
 // ----------------------------------------------------------------
 // Init
@@ -65,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoading('Loading shared dashboard…');
     loadFromCloud(binId)
       .then((payload) => {
+        isSharedView = true;
         restoreFromPayload(payload);
         history.replaceState({ view: 'dashboard' }, '');
         _showDashboardView();
@@ -77,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1b. Try embedded URL payload (?d=…)
   const urlPayload = decodeFromUrl();
   if (urlPayload) {
+    isSharedView = true;
     restoreFromPayload(urlPayload);
     history.replaceState({ view: 'dashboard' }, '');
     _showDashboardView();
@@ -358,6 +361,8 @@ function renderDashboard() {
   document.getElementById('header-logo').textContent = t('header.logo');
   document.getElementById('header-sub').textContent  = `${processed.length} governors`;
   updateLangSwitchBtn();
+  document.getElementById('btn-cloud-save').style.display = isSharedView ? 'none' : '';
+  document.getElementById('btn-share').style.display      = isSharedView ? 'none' : '';
 
   // Banner
   document.getElementById('kvk-bar-name').textContent = kvkName;
@@ -394,6 +399,7 @@ window.resetAll = function () {
   processed       = [];
   chartsBuilt     = false;
   activeTab       = 'rankings';
+  isSharedView    = false;
 
   renderSnapshotList();
   clearSession();
