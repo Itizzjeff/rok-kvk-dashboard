@@ -16,7 +16,7 @@ const TRANSLATIONS = {
 
     // Upload screen
     'upload.title':      '⚔️ RoK KvK Dashboard',
-    'upload.subtitle':   'Upload two CSV exports (KvK start & end) to track performance delta — or just one for a snapshot view.',
+    'upload.subtitle':   'Upload multiple snapshots (KvK Start, Pass 4, Pass 5, KvK End…) then select which two to compare.',
     'upload.kvkLabel':   'KvK Name / Season',
     'upload.kvkPlaceholder': 'e.g. KvK Season 5 — March 2026',
     'upload.startLabel': 'KvK Start',
@@ -28,6 +28,11 @@ const TRANSLATIONS = {
     'upload.or':         'or',
     'upload.loaded':     '✓ {n} governors loaded',
     'upload.urlLabel':   '🔗 Load shared URL',
+    'upload.snapshots':  'Snapshots',
+    'upload.addSnapshot': '+ Add Snapshot',
+    'upload.snapEmpty':  'No snapshots yet — click "Add Snapshot" to upload your first file.',
+    'upload.compare':    'Compare',
+    'upload.compareHint': '{a} → {b} ({n} governors)',
 
     // KvK banner
     'banner.tagDelta':    'DELTA',
@@ -92,7 +97,7 @@ const TRANSLATIONS = {
 
     // Upload screen
     'upload.title':      '⚔️ RoK KvK ダッシュボード',
-    'upload.subtitle':   'KvK開始・終了時のCSVを2つアップロードして差分を確認、または1つだけでスナップショット表示できます。',
+    'upload.subtitle':   '複数のスナップショット（KvK開始、パス4、パス5、KvK終了など）をアップロードして比較する2つを選択できます。',
     'upload.kvkLabel':   'KvK名 / シーズン',
     'upload.kvkPlaceholder': '例: KvKシーズン5 — 2026年3月',
     'upload.startLabel': 'KvK 開始',
@@ -104,6 +109,11 @@ const TRANSLATIONS = {
     'upload.or':         'または',
     'upload.loaded':     '✓ {n}人のガバナーを読み込みました',
     'upload.urlLabel':   '🔗 共有URLから読み込む',
+    'upload.snapshots':  'スナップショット',
+    'upload.addSnapshot': '+ 追加',
+    'upload.snapEmpty':  'スナップショットなし — 「追加」をクリックしてアップロード',
+    'upload.compare':    '比較',
+    'upload.compareHint': '{a} → {b}（{n}人）',
 
     // KvK banner
     'banner.tagDelta':    'DELTA',

@@ -10,13 +10,13 @@
   <link rel="stylesheet" href="css/styles.css" />
 
   <!-- Third-party CDN libraries (pinned versions) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <!-- App entry point (ES module) -->
-  <script type="module" src="js/main.js" defer></script>
+  <script type="module" src="js/main.js"></script>
 </head>
 <body>
 
@@ -25,11 +25,8 @@
      ================================================================ -->
 <div id="upload-screen">
 
-  <!-- Minimal header (no back/share yet) -->
-  <div class="header" style="position:static; margin-bottom:0;">
-    <div>
-      <div class="header-logo">⚔️ RoK KvK Dashboard</div>
-    </div>
+  <div class="header" style="position:static;">
+    <div class="header-logo">⚔️ RoK KvK Dashboard</div>
     <div class="header-actions">
       <div class="lang-toggle" aria-label="Language">
         <button class="lang-pill active" data-lang="en" onclick="switchLang('en')">EN</button>
@@ -38,11 +35,11 @@
     </div>
   </div>
 
-  <div style="max-width:720px; margin:40px auto; padding:0 24px 40px;">
+  <div style="max-width:760px; margin:40px auto; padding:0 24px 60px;">
 
     <h1 class="upload-title" id="upload-title">⚔️ RoK KvK Dashboard</h1>
     <p class="upload-subtitle" id="upload-subtitle">
-      Upload two CSV exports (KvK start &amp; end) to track performance delta — or just one for a snapshot view.
+      Upload multiple snapshots (KvK Start, Pass 4, Pass 5, KvK End…) then select which two to compare.
     </p>
 
     <!-- KvK name -->
@@ -51,29 +48,35 @@
       <input type="text" id="kvk-name-input" placeholder="e.g. KvK Season 5 — March 2026" />
     </div>
 
-    <!-- Drop zones -->
-    <div class="upload-grid">
-
-      <div class="upload-card" id="drop-start" onclick="document.getElementById('file-start').click()">
-        <input type="file" id="file-start" accept=".xlsx,.csv" tabindex="-1" />
-        <span class="upload-icon">📊</span>
-        <div class="upload-label" id="upload-start-label">KvK Start</div>
-        <div class="upload-hint"  id="upload-start-hint">CSV export — beginning of KvK</div>
-        <div class="upload-status" id="status-start"></div>
+    <!-- Snapshot list -->
+    <div class="snapshot-section">
+      <div class="snapshot-header">
+        <span id="snapshot-section-label">Snapshots</span>
+        <button class="btn btn-primary" id="btn-add-snapshot" onclick="addSnapshot()">+ Add Snapshot</button>
       </div>
 
-      <div class="upload-card" id="drop-end" onclick="document.getElementById('file-end').click()">
-        <input type="file" id="file-end" accept=".xlsx,.csv" tabindex="-1" />
-        <span class="upload-icon">🏆</span>
-        <div class="upload-label" id="upload-end-label">KvK End</div>
-        <div class="upload-hint"  id="upload-end-hint">CSV export — end of KvK</div>
-        <div class="upload-status" id="status-end"></div>
+      <div id="snapshot-list" class="snapshot-list">
+        <!-- rows injected by JS -->
+        <div class="snapshot-empty" id="snapshot-empty">
+          <span id="snapshot-empty-text">No snapshots yet — click "Add Snapshot" to upload your first file.</span>
+        </div>
       </div>
 
+      <!-- hidden file input -->
+      <input type="file" id="file-picker" accept=".xlsx,.csv" style="display:none" />
+    </div>
+
+    <!-- Compare selector -->
+    <div class="compare-row" id="compare-row" style="display:none">
+      <span id="compare-label">Compare</span>
+      <select class="filter-select" id="compare-from" onchange="updateComparePreview()"></select>
+      <span class="compare-arrow">→</span>
+      <select class="filter-select" id="compare-to"   onchange="updateComparePreview()"></select>
+      <span class="compare-preview" id="compare-preview"></span>
     </div>
 
     <!-- Actions -->
-    <div class="upload-actions">
+    <div class="upload-actions" style="margin-top:20px;">
       <button class="btn btn-primary" id="btn-show" onclick="showDashboard()" disabled>
         Show Dashboard →
       </button>
@@ -99,7 +102,6 @@
      ================================================================ -->
 <div id="dashboard">
 
-  <!-- Sticky header -->
   <header class="header">
     <div>
       <div class="header-logo" id="header-logo">⚔️ KvK Dashboard</div>
@@ -117,13 +119,19 @@
 
   <div class="dashboard-inner">
 
-    <!-- KvK banner -->
+    <!-- KvK banner with inline compare selectors -->
     <div class="kvk-banner">
-      <div>
+      <div style="flex:1; min-width:0;">
         <div class="kvk-banner-name" id="kvk-bar-name">KvK Dashboard</div>
         <div class="kvk-banner-meta" id="kvk-bar-meta"></div>
       </div>
-      <span class="kvk-banner-tag" id="kvk-bar-tag">LIVE</span>
+      <!-- Snapshot comparison selectors (shown when >1 snapshot) -->
+      <div class="banner-compare" id="banner-compare" style="display:none">
+        <select class="filter-select" id="dash-compare-from" onchange="onDashCompareChange()"></select>
+        <span class="compare-arrow">→</span>
+        <select class="filter-select" id="dash-compare-to"   onchange="onDashCompareChange()"></select>
+      </div>
+      <span class="kvk-banner-tag" id="kvk-bar-tag">SNAPSHOT</span>
     </div>
 
     <!-- Stat cards -->
@@ -131,8 +139,8 @@
 
     <!-- Tab navigation -->
     <nav class="tabs" aria-label="Views">
-      <button class="tab active" onclick="switchTab('rankings', this)">🏆 Rankings</button>
-      <button class="tab"        onclick="switchTab('charts', this)">📈 Development</button>
+      <button class="tab active" onclick="switchTab('rankings', this)" id="tab-btn-rankings">🏆 Rankings</button>
+      <button class="tab"        onclick="switchTab('charts', this)"   id="tab-btn-charts">📈 Development</button>
     </nav>
 
     <!-- ── Rankings tab ── -->
@@ -170,18 +178,7 @@
       <div class="table-wrap">
         <div class="table-scroll">
           <table id="main-table" aria-label="Governor rankings">
-            <thead>
-              <tr>
-                <th style="width:44px">#</th>
-                <th class="sortable" onclick="window.__table.sortBy('name')">Governor</th>
-                <th class="sortable" onclick="window.__table.sortBy('kp')">Kill Points</th>
-                <th class="sortable" onclick="window.__table.sortBy('t5kills')">T5 Kills</th>
-                <th class="sortable" onclick="window.__table.sortBy('t4kills')">T4 Kills</th>
-                <th class="sortable" onclick="window.__table.sortBy('deaths')">Deaths</th>
-                <th class="sortable" onclick="window.__table.sortBy('power')">Power</th>
-                <th class="sortable" onclick="window.__table.sortBy('kd')">K/D</th>
-              </tr>
-            </thead>
+            <thead><tr></tr></thead>
             <tbody id="table-body"></tbody>
           </table>
         </div>
@@ -192,34 +189,28 @@
     <!-- ── Charts tab ── -->
     <div id="tab-charts" style="display:none">
       <div class="charts-grid">
-
         <div class="chart-card">
           <div class="chart-title">Top 10 — Kill Points</div>
           <div class="chart-wrap"><canvas id="chart-kp"></canvas></div>
         </div>
-
         <div class="chart-card">
           <div class="chart-title">Top 10 — T5 Kills</div>
           <div class="chart-wrap"><canvas id="chart-t5"></canvas></div>
         </div>
-
         <div class="chart-card">
           <div class="chart-title">Top 10 — Deaths</div>
           <div class="chart-wrap"><canvas id="chart-deaths"></canvas></div>
         </div>
-
         <div class="chart-card">
           <div class="chart-title">Top 10 — Power Gain</div>
           <div class="chart-wrap"><canvas id="chart-power"></canvas></div>
         </div>
-
       </div>
     </div><!-- /#tab-charts -->
 
   </div><!-- /.dashboard-inner -->
 </div><!-- /#dashboard -->
 
-<!-- Toast notification -->
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 </body>

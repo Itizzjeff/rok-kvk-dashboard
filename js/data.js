@@ -170,7 +170,8 @@ export function generateDemoData() {
     }));
 
   return {
-    startData: makeSnapshot(0.7),
+    startData: makeSnapshot(0.5),
+    midData:   makeSnapshot(0.75),
     endData:   makeSnapshot(1.0),
   };
 }
