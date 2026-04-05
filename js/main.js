@@ -48,19 +48,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.__table = { sortBy, setSortCol, applyFilters };
 
-  // Restore from shared URL
-  const payload = decodeFromUrl();
-  if (payload) {
-    kvkName   = payload.name ?? '';
-    snapshots = (payload.snapshots ?? []).map((s, i) => ({ ...s, id: i }));
-    snapshotCounter = snapshots.length;
-    document.getElementById('kvk-name-input').value = kvkName;
-    renderSnapshotList();
-    updateCompareSelectors();
-    updateShowButton();
-    if (snapshots.length >= 1) showDashboard();
+  // Browser back/forward button support
+  window.addEventListener('popstate', (e) => {
+    if (e.state?.view === 'dashboard') {
+      _showDashboardView();
+    } else {
+      _showUploadView();
+    }
+  });
+
+  // 1. Try shared URL first
+  const urlPayload = decodeFromUrl();
+  if (urlPayload) {
+    restoreFromPayload(urlPayload);
+    history.replaceState({ view: 'dashboard' }, '');
+    _showDashboardView();
+    return;
+  }
+
+  // 2. Try sessionStorage (survives back-navigation within the tab)
+  const session = loadSession();
+  if (session) {
+    restoreFromPayload(session);
+    // If user was on dashboard, show it again
+    if (session.onDashboard) {
+      history.replaceState({ view: 'dashboard' }, '');
+      _showDashboardView();
+    }
   }
 });
+
+// ----------------------------------------------------------------
+// Session persistence (survives back-navigation within the tab)
+// ----------------------------------------------------------------
+
+const SESSION_KEY = 'rok-kvk-session';
+
+function saveSession(onDashboard = false) {
+  try {
+    const payload = {
+      name:          kvkName,
+      snapshots:     snapshots.map(({ label, filename, data }) => ({ label, filename, data })),
+      fromIdx:       compareFromIdx,
+      toIdx:         compareToIdx,
+      onDashboard,
+    };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+  } catch { /* quota exceeded or private mode — silently ignore */ }
+}
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function clearSession() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+}
+
+function restoreFromPayload(payload) {
+  kvkName        = payload.name ?? '';
+  snapshots      = (payload.snapshots ?? []).map((s, i) => ({ ...s, id: i }));
+  snapshotCounter = snapshots.length;
+  compareFromIdx = payload.fromIdx ?? 0;
+  compareToIdx   = payload.toIdx   ?? Math.max(0, snapshots.length - 1);
+  document.getElementById('kvk-name-input').value = kvkName;
+  renderSnapshotList();
+  updateCompareSelectors();
+  updateShowButton();
+}
 
 // ----------------------------------------------------------------
 // Upload screen rendering
@@ -209,8 +267,20 @@ function updateShowButton() {
 
 window.showDashboard = function () {
   kvkName = document.getElementById('kvk-name-input').value.trim() || 'KvK Dashboard';
-  renderDashboard();
+  saveSession(true);
+  history.pushState({ view: 'dashboard' }, '');
+  _showDashboardView();
 };
+
+function _showDashboardView() {
+  renderDashboard();
+}
+
+function _showUploadView() {
+  saveSession(false);
+  document.getElementById('upload-screen').style.display = 'block';
+  document.getElementById('dashboard').style.display     = 'none';
+}
 
 function renderDashboard() {
   const fromSnap = snapshots[compareFromIdx] ?? null;
@@ -225,6 +295,7 @@ function renderDashboard() {
 
   document.getElementById('upload-screen').style.display = 'none';
   document.getElementById('dashboard').style.display     = 'block';
+  saveSession(true);
 
   // Header
   document.getElementById('header-logo').textContent = t('header.logo');
@@ -267,10 +338,11 @@ window.resetAll = function () {
   activeTab       = 'rankings';
 
   document.getElementById('url-box').classList.remove('visible');
-  document.getElementById('upload-screen').style.display = 'block';
-  document.getElementById('dashboard').style.display     = 'none';
   renderSnapshotList();
+  clearSession();
   clearUrlParam();
+  history.pushState({ view: 'upload' }, '');
+  _showUploadView();
 };
 
 window.loadDemo = function () {
