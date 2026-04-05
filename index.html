@@ -103,18 +103,14 @@
 <div id="dashboard">
 
   <header class="header">
-    <div>
+    <div class="header-brand">
       <div class="header-logo" id="header-logo">⚔️ KvK Dashboard</div>
       <div class="header-sub"  id="header-sub">Rise of Kingdoms</div>
     </div>
     <div class="header-actions">
-      <div class="lang-toggle" aria-label="Language">
-        <button class="lang-pill active" data-lang="en" onclick="switchLang('en')">EN</button>
-        <button class="lang-pill"        data-lang="ja" onclick="switchLang('ja')">日本語</button>
-      </div>
-      <button class="btn" id="btn-cloud-save" onclick="cloudSave()">☁️ Save</button>
-      <button class="btn btn-ghost" id="btn-share" onclick="shareUrl()">🔗 URL</button>
-      <button class="btn btn-danger" id="btn-back" onclick="resetAll()">← Back</button>
+      <button class="btn btn-primary btn-icon" id="btn-cloud-save" onclick="cloudSave()" title="Save to Cloud">☁️</button>
+      <button class="btn btn-icon" id="btn-share" onclick="shareUrl()" title="Share URL">🔗</button>
+      <button class="btn btn-danger btn-icon" id="btn-back" onclick="resetAll()" title="Back">←</button>
     </div>
   </header>
 
