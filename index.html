@@ -52,7 +52,7 @@
     <div class="snapshot-section">
       <div class="snapshot-header">
         <span id="snapshot-section-label">Snapshots</span>
-        <button class="btn btn-primary" id="btn-add-snapshot" onclick="addSnapshot()">+ Add Snapshot</button>
+        <label class="btn btn-primary" id="btn-add-snapshot" for="file-picker">+ Add Snapshot</label>
       </div>
 
       <div id="snapshot-list" class="snapshot-list">
@@ -62,7 +62,7 @@
         </div>
       </div>
 
-      <!-- hidden file input -->
+      <!-- hidden file input — triggered directly by the label above -->
       <input type="file" id="file-picker" accept=".xlsx,.csv" style="display:none" />
     </div>
 

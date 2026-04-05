@@ -87,12 +87,6 @@ function renderUploadScreen() {
 // Snapshot management
 // ----------------------------------------------------------------
 
-/** Open file picker — called by the "Add Snapshot" button. */
-window.addSnapshot = function () {
-  document.getElementById('file-picker').value = '';
-  document.getElementById('file-picker').click();
-};
-
 function onFilePicked(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -105,6 +99,7 @@ function onFilePicked(e) {
     const data = isXlsx ? parseXLSX(ev.target.result) : parseCSV(ev.target.result);
     const snap = { id: snapshotCounter++, label, filename: file.name, data };
     snapshots.push(snap);
+    e.target.value = ''; // reset so the same file can be re-selected
 
     // Default compare: first vs last
     compareFromIdx = 0;
