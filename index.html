@@ -90,6 +90,7 @@
       </button>
       <span class="upload-sep" id="upload-sep">or</span>
       <button class="btn" id="btn-demo" onclick="loadDemo()">Load Demo</button>
+      <button class="btn btn-danger" id="btn-reset" onclick="resetAll()" style="display:none" title="Clear all snapshots and start over">🗑 New KvK</button>
     </div>
 
     <!-- Saved dashboards -->
@@ -118,7 +119,7 @@
       <button class="btn btn-icon lang-switch-btn" id="btn-lang-switch" onclick="toggleLang()" title="Switch language" aria-label="Switch language">EN</button>
       <button class="btn btn-primary btn-icon" id="btn-cloud-save" onclick="cloudSave()" title="Save to Cloud" aria-label="Save to Cloud">☁️</button>
       <button class="btn btn-icon" id="btn-share" onclick="shareUrl()" title="Share URL" aria-label="Share URL">🔗</button>
-      <button class="btn btn-danger btn-icon" id="btn-back" onclick="resetAll()" title="Back" aria-label="Back to upload">←</button>
+      <button class="btn btn-danger btn-icon" id="btn-back" onclick="goBack()" title="Back" aria-label="Back to upload">←</button>
     </div>
   </header>
 

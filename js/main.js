@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.state?.view === 'dashboard') {
       _showDashboardView();
     } else {
+      isSharedView = false;
       _showUploadView();
     }
   });
@@ -318,6 +319,8 @@ window.updateComparePreview = function () {
 
 function updateShowButton() {
   document.getElementById('btn-show').disabled = snapshots.length < 1;
+  const resetBtn = document.getElementById('btn-reset');
+  if (resetBtn) resetBtn.style.display = snapshots.length > 0 ? '' : 'none';
 }
 
 // ----------------------------------------------------------------
@@ -392,21 +395,27 @@ window.onDashCompareChange = function () {
   renderDashboard();
 };
 
-window.resetAll = function () {
-  // Owner viewing a shared dashboard: keep snapshots so they can add more
-  const ownerSharedView = isSharedView && !!getApiKey();
-
-  if (!ownerSharedView) {
-    snapshots       = [];
-    snapshotCounter = 0;
-    compareFromIdx  = 0;
-    compareToIdx    = 1;
-    processed       = [];
-  }
-
+// ← Back: return to upload screen keeping all snapshots intact
+window.goBack = function () {
   chartsBuilt  = false;
   activeTab    = 'rankings';
   isSharedView = false;
+  saveSession(false);
+  clearUrlParam();
+  history.pushState({ view: 'upload' }, '');
+  _showUploadView();
+};
+
+// 🗑 New KvK: clear everything and start fresh
+window.resetAll = function () {
+  snapshots       = [];
+  snapshotCounter = 0;
+  compareFromIdx  = 0;
+  compareToIdx    = 1;
+  processed       = [];
+  chartsBuilt     = false;
+  activeTab       = 'rankings';
+  isSharedView    = false;
 
   renderSnapshotList();
   updateCompareSelectors();
