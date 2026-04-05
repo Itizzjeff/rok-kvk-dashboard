@@ -10,13 +10,13 @@
  * a plain snapshot view (no delta).
  */
 
-import { t, setLang, getLang, initLang }                                from './i18n.js';
-import { parseCSV, parseXLSX }                                          from './csv-parser.js';
-import { processData, computeStats, computeMaxValues, generateDemoData } from './data.js';
-import { initTable, refreshTable, applyFilters, buildAllianceFilter, sortBy, setSortCol, setViewMode } from './table.js';
-import { buildCharts, updateChartTitles }                               from './charts.js';
-import { encodeAndShare, decodeFromUrl, clearUrlParam } from './share.js';
-import { saveToCloud, loadFromCloud, getApiKey, setApiKey, getSavedDashboards, addSavedDashboard, removeSavedDashboard } from './cloud.js';
+import { t, setLang, getLang, initLang }                                from './i18n.js?v=4';
+import { parseCSV, parseXLSX }                                          from './csv-parser.js?v=4';
+import { processData, computeStats, computeMaxValues, generateDemoData } from './data.js?v=4';
+import { initTable, refreshTable, applyFilters, buildAllianceFilter, sortBy, setSortCol, setViewMode } from './table.js?v=4';
+import { buildCharts, updateChartTitles }                               from './charts.js?v=4';
+import { encodeAndShare, decodeFromUrl, clearUrlParam } from './share.js?v=4';
+import { saveToCloud, loadFromCloud, getApiKey, setApiKey, getSavedDashboards, addSavedDashboard, removeSavedDashboard } from './cloud.js?v=4';
 
 // ----------------------------------------------------------------
 // State

@@ -12,14 +12,38 @@
 const BASE_URL    = 'https://api.jsonbin.io/v3/b';
 const KEY_STORAGE = 'rok-jsonbin-key';
 
+/**
+ * Remove zero/null numeric fields from every governor row in every snapshot.
+ * Strings (name, alliance) are always kept. This can cut payload size by 60-80%
+ * when most stats are 0 (e.g. a base scan before KvK starts).
+ */
+function minifyPayload(payload) {
+  if (!Array.isArray(payload?.snapshots)) return payload;
+  return {
+    ...payload,
+    snapshots: payload.snapshots.map((snap) => ({
+      ...snap,
+      data: snap.data.map((gov) => {
+        const out = {};
+        for (const [k, v] of Object.entries(gov)) {
+          if (typeof v === 'number' && v === 0) continue;
+          if (v === null || v === undefined) continue;
+          out[k] = v;
+        }
+        return out;
+      }),
+    })),
+  };
+}
+
 // ----------------------------------------------------------------
 // Public API
 // ----------------------------------------------------------------
 
 /**
- * Save a dashboard payload to JSONBin.
+ * Save a dashboard payload to JSONBin (always creates a new bin).
  * @param {object} payload
- * @param {string} name   — used as the bin name
+ * @param {string} name — used as the bin name
  * @returns {Promise<string>} bin ID
  * @throws if no API key is set or the request fails
  */
@@ -27,15 +51,20 @@ export async function saveToCloud(payload, name = 'KvK Dashboard') {
   const apiKey = getApiKey();
   if (!apiKey) throw new Error('NO_KEY');
 
+  // Strip zero-value numeric fields, then compress with base64-safe lz-string.
+  const slim       = minifyPayload(payload);
+  const compressed = LZString.compressToBase64(JSON.stringify(slim));
+  const envelope   = { v: 1, c: compressed };
+
   const res = await fetch(BASE_URL, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'X-Master-Key':  apiKey,
-      'X-Bin-Name':    name.slice(0, 128),
-      'X-Bin-Private': 'false',
+      'Content-Type':  'application/json',
+      'X-Master-Key':   apiKey,
+      'X-Bin-Name':     name.slice(0, 128),
+      'X-Bin-Private':  'false',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(envelope),
   });
 
   if (!res.ok) {
@@ -49,16 +78,19 @@ export async function saveToCloud(payload, name = 'KvK Dashboard') {
 
 /**
  * Load a dashboard payload from JSONBin by ID.
- * Sends API key if available (required for private bins).
  * @param {string} binId
- * @param {string} [keyOverride] - optional key to use instead of stored one
  * @returns {Promise<object>}
  */
 export async function loadFromCloud(binId) {
   const res = await fetch(`${BASE_URL}/${binId}/latest`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
-  return data.record;
+  const record = data.record;
+  // Handle compressed envelope (v:1) written by saveToCloud
+  if (record?.v === 1 && record?.c) {
+    return JSON.parse(LZString.decompressFromBase64(record.c));
+  }
+  return record;
 }
 
 /** @returns {string|null} */
