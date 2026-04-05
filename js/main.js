@@ -97,7 +97,7 @@ function onFilePicked(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  const label    = suggestLabel(file.name);
+  const label    = suggestLabel();
   const isXlsx   = file.name.toLowerCase().endsWith('.xlsx');
   const reader   = new FileReader();
 
@@ -120,16 +120,11 @@ function onFilePicked(e) {
   else         reader.readAsText(file);
 }
 
-/** Derive a human-friendly default label from a filename. */
-function suggestLabel(filename) {
-  // e.g. "2472_20260402_20260402_statsExport.xlsx" → "2026-04-02"
-  const dateMatch = filename.match(/(\d{4})(\d{2})(\d{2})/);
-  if (dateMatch) {
-    const [, y, m, d] = dateMatch;
-    return `${y}-${m}-${d}`;
-  }
-  if (snapshots.length === 0) return getLang() === 'ja' ? 'KvK 開始' : 'KvK Start';
-  return `Pass ${snapshots.length + 1}`;
+/** Default label for each uploaded snapshot: Pass 1, Pass 2, … */
+function suggestLabel() {
+  return getLang() === 'ja'
+    ? `パス ${snapshots.length + 1}`
+    : `Pass ${snapshots.length + 1}`;
 }
 
 window.removeSnapshot = function (id) {
