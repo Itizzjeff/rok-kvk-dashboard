@@ -98,6 +98,13 @@ body {
   line-height: 1;
 }
 
+.lang-switch-btn {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 9px;
+  letter-spacing: 0.03em;
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   padding: 7px 16px;

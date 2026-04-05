@@ -357,6 +357,7 @@ function renderDashboard() {
   // Header
   document.getElementById('header-logo').textContent = t('header.logo');
   document.getElementById('header-sub').textContent  = `${processed.length} governors`;
+  updateLangSwitchBtn();
 
   // Banner
   document.getElementById('kvk-bar-name').textContent = kvkName;
@@ -502,8 +503,18 @@ function setupLangToggle() {
   });
 }
 
+function updateLangSwitchBtn() {
+  const btn = document.getElementById('btn-lang-switch');
+  if (btn) btn.textContent = getLang() === 'en' ? 'JP' : 'EN';
+}
+
+window.toggleLang = function () {
+  switchLang(getLang() === 'en' ? 'ja' : 'en');
+};
+
 window.switchLang = function (lang) {
   setLang(lang);
+  updateLangSwitchBtn();
   document.querySelectorAll('.lang-pill').forEach((pill) => {
     pill.classList.toggle('active', pill.dataset.lang === lang);
   });
