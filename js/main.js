@@ -510,15 +510,20 @@ window.cloudSave = async function () {
     if (e.message === 'NO_KEY') { openModal(); return; }
     showToast('❌ ' + e.message);
   } finally {
-    btn.textContent = '☁️ Save';
+    btn.textContent = '☁️';
     btn.disabled = false;
   }
 };
 
-// Plain URL share (no cloud)
-window.shareUrl = function () {
+// URL share — embed data if small, otherwise fall back to cloud save
+window.shareUrl = async function () {
   const url = encodeAndShare(buildPayload());
-  openShareModal(url);
+  if (url.length <= 8000) {
+    openShareModal(url);
+    return;
+  }
+  // URL too long — use cloud save for a short ?bin= link
+  await cloudSave();
 };
 
 window.copyShareUrl = function () {
