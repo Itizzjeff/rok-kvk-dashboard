@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Rise of Kingdoms KvK performance dashboard — track kill points, T4/T5 kills, deaths and power across a Kingdom vs. Kingdom event." />
   <title>RoK KvK Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/styles.css" />
@@ -184,6 +185,11 @@
         </div>
 
         <span class="filter-count" id="filter-count"></span>
+      </div>
+
+      <!-- Shown when only 1 snapshot is loaded (no delta available) -->
+      <div id="single-snap-hint" class="single-snap-hint" style="display:none">
+        📂 Import a second snapshot to see KvK progress (kills, deaths, kill points gained).
       </div>
 
       <div class="table-wrap">

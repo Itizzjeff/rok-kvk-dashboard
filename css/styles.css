@@ -867,6 +867,16 @@ tbody tr:hover td { background: rgba(88, 166, 255, 0.04); }
   gap: 8px;
 }
 
+.single-snap-hint {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg2));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-size: 13px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+}
+
 .saved-row {
   display: flex;
   align-items: center;

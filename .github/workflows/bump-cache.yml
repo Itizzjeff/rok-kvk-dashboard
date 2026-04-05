@@ -1,0 +1,30 @@
+name: Bump Cache Version
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'js/**'
+      - 'css/**'
+      - 'index.html'
+
+jobs:
+  bump:
+    # Don't run on our own version-bump commits
+    if: "!startsWith(github.event.head_commit.message, 'chore: bump cache')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump ?v= and commit
+        run: |
+          CURRENT=$(grep -oP '(?<=\?v=)\d+' index.html | head -1)
+          NEXT=$((CURRENT + 1))
+          find . -name "*.html" -o -name "*.js" | xargs grep -l "?v=${CURRENT}" 2>/dev/null | xargs sed -i "s/?v=${CURRENT}/?v=${NEXT}/g"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git diff --quiet && git diff --staged --quiet \
+            && echo "No version change needed" \
+            || (git add -A && git commit -m "chore: bump cache v${NEXT}" && git push)

@@ -122,7 +122,8 @@ export function getSavedDashboards() {
 
 /** @param {{ binId: string, name: string }} entry */
 export function addSavedDashboard(entry) {
-  const list = getSavedDashboards().filter(d => d.binId !== entry.binId);
+  // Remove any previous entry with the same name OR binId so we always show the latest
+  const list = getSavedDashboards().filter(d => d.binId !== entry.binId && d.name !== entry.name);
   list.unshift({ ...entry, savedAt: new Date().toISOString() });
   localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, 20)));
 }

@@ -114,19 +114,19 @@ function saveSession(onDashboard = false) {
       toIdx:         compareToIdx,
       onDashboard,
     };
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(payload));
   } catch { /* quota exceeded or private mode — silently ignore */ }
 }
 
 function loadSession() {
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = localStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
 function clearSession() {
-  try { sessionStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
+  try { localStorage.removeItem(SESSION_KEY); } catch { /* ignore */ }
 }
 
 function restoreFromPayload(payload) {
@@ -396,6 +396,10 @@ function renderDashboard() {
   renderStatCards(stats);
   buildAllianceFilter(processed);
   initTable(processed, maxVals);
+
+  // Single-snapshot hint — visible when there's no delta to show
+  const hint = document.getElementById('single-snap-hint');
+  if (hint) hint.style.display = (!hasDelta && snapshots.length === 1) ? '' : 'none';
 
   chartsBuilt = false;
   switchTab('rankings', document.getElementById('tab-btn-rankings'));
@@ -668,6 +672,7 @@ window.saveApiKey = async function () {
 function openShareModal(url) {
   document.getElementById('share-url-input').value = url;
   document.getElementById('share-modal-backdrop').style.display = 'flex';
+  navigator.clipboard?.writeText(url).then(() => showToast('🔗 URL copied!')).catch(() => {});
 }
 
 window.closeShareModal = function () {
