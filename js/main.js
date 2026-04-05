@@ -13,7 +13,7 @@
 import { t, setLang, getLang, initLang }                                from './i18n.js';
 import { parseCSV, parseXLSX }                                          from './csv-parser.js';
 import { processData, computeStats, computeMaxValues, generateDemoData } from './data.js';
-import { initTable, refreshTable, applyFilters, buildAllianceFilter, sortBy, setSortCol } from './table.js';
+import { initTable, refreshTable, applyFilters, buildAllianceFilter, sortBy, setSortCol, setViewMode } from './table.js';
 import { buildCharts, updateChartTitles }                               from './charts.js';
 import { encodeAndShare, decodeFromUrl, clearUrlParam } from './share.js';
 import { saveToCloud, loadFromCloud, getApiKey, setApiKey, getSavedDashboards, addSavedDashboard, removeSavedDashboard } from './cloud.js';
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('file-picker').addEventListener('change', onFilePicked);
 
-  window.__table = { sortBy, setSortCol, applyFilters };
+  window.__table = { sortBy, setSortCol, applyFilters, setViewMode };
 
   // Browser back/forward button support
   window.addEventListener('popstate', (e) => {

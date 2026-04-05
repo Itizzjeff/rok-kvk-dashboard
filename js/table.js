@@ -10,8 +10,9 @@ let allRows = [];
 /** @type {Record<string, number>} */
 let maxValues = {};
 
-let sortCol = 'kp';
-let sortDir = 'desc';
+let sortCol  = 'kp';
+let sortDir  = 'desc';
+let viewMode = 'kvk'; // 'kvk' = sort by delta when available | 'current' = always sort by absolute
 
 const SORT_COLS = ['name', 'kp', 't5kills', 't4kills', 'deaths', 'power', 'kd'];
 
@@ -25,10 +26,15 @@ const SORT_COLS = ['name', 'kp', 't5kills', 't4kills', 'deaths', 'power', 'kd'];
  * @param {Record<string, number>} maxVals
  */
 export function initTable(rows, maxVals) {
-  allRows    = rows;
-  maxValues  = maxVals;
-  sortCol    = 'kp';
-  sortDir    = 'desc';
+  allRows   = rows;
+  maxValues = maxVals;
+  sortCol   = 'kp';
+  sortDir   = 'desc';
+  viewMode  = 'kvk';
+  const hasDelta = rows.some((r) => r.hasDelta);
+  const toggle = document.getElementById('view-toggle');
+  if (toggle) toggle.style.display = hasDelta ? '' : 'none';
+  syncViewPills();
   renderHeaders();
   applyFilters();
 }
@@ -61,6 +67,13 @@ export function setSortCol(col) {
   renderHeaders();
   applyFilters();
   syncSortPills();
+}
+
+/** Switch between 'kvk' (sort by delta) and 'current' (sort by absolute value). */
+export function setViewMode(mode) {
+  viewMode = mode;
+  syncViewPills();
+  applyFilters();
 }
 
 /** Run filters and re-render the tbody. */
@@ -100,14 +113,13 @@ export function buildAllianceFilter(rows) {
 // Internal helpers
 // ----------------------------------------------------------------
 
-/** Return the sort value for a governor + column.
- *  When a delta exists, sort by delta (= KvK contribution).
- *  Fall back to absolute current value for single-snapshot mode. */
+/** Return the sort value for a governor + column. */
 function sortValue(gov, col) {
   if (col === 'kd')   return gov.kd;
   if (col === 'name') return gov.name;
+  if (viewMode === 'current' || !gov.hasDelta) return gov[col] ?? 0;
   const dField = 'd' + col.charAt(0).toUpperCase() + col.slice(1);
-  return gov.hasDelta ? (gov[dField] ?? 0) : (gov[col] ?? 0);
+  return gov[dField] ?? 0;
 }
 
 function sortRows(rows) {
@@ -215,6 +227,11 @@ function syncSortPills() {
   document.querySelectorAll('.sort-pill').forEach((pill) => {
     pill.classList.toggle('active', pill.dataset.col === sortCol);
   });
+}
+
+function syncViewPills() {
+  document.getElementById('view-kvk')    ?.classList.toggle('active', viewMode === 'kvk');
+  document.getElementById('view-current')?.classList.toggle('active', viewMode === 'current');
 }
 
 /** Format a large integer to compact notation (1.2M, 345K, etc.) */
