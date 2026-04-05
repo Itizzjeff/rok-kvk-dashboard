@@ -146,15 +146,17 @@ function renderSnapshotList() {
   const list  = document.getElementById('snapshot-list');
   const empty = document.getElementById('snapshot-empty');
 
+  // Remove old snapshot rows but keep the empty placeholder in the DOM
+  list.querySelectorAll('.snapshot-row').forEach((el) => el.remove());
+
   if (!snapshots.length) {
     empty.style.display = '';
-    list.innerHTML = '';
-    list.appendChild(empty);
+    document.getElementById('compare-row').style.display = 'none';
     return;
   }
 
   empty.style.display = 'none';
-  list.innerHTML = snapshots.map((snap, i) => `
+  list.insertAdjacentHTML('beforeend', snapshots.map((snap, i) => `
     <div class="snapshot-row">
       <div class="snapshot-index">${i + 1}</div>
       <input
@@ -168,10 +170,9 @@ function renderSnapshotList() {
       <div class="snapshot-count">${snap.data.length} gov.</div>
       <button class="snapshot-remove" onclick="removeSnapshot(${snap.id})" title="Remove">✕</button>
     </div>
-  `).join('');
+  `).join(''));
 
-  const compareRow = document.getElementById('compare-row');
-  compareRow.style.display = snapshots.length >= 2 ? 'flex' : 'none';
+  document.getElementById('compare-row').style.display = snapshots.length >= 2 ? 'flex' : 'none';
 }
 
 function updateCompareSelectors() {
@@ -265,13 +266,10 @@ window.resetAll = function () {
   chartsBuilt     = false;
   activeTab       = 'rankings';
 
-  document.getElementById('snapshot-list').innerHTML = '';
-  document.getElementById('snapshot-list').appendChild(document.getElementById('snapshot-empty'));
-  document.getElementById('snapshot-empty').style.display = '';
-  document.getElementById('compare-row').style.display    = 'none';
   document.getElementById('url-box').classList.remove('visible');
-  document.getElementById('upload-screen').style.display  = 'block';
-  document.getElementById('dashboard').style.display      = 'none';
+  document.getElementById('upload-screen').style.display = 'block';
+  document.getElementById('dashboard').style.display     = 'none';
+  renderSnapshotList();
   clearUrlParam();
 };
 
