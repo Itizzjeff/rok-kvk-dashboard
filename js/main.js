@@ -62,13 +62,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1a. Cloud bin (?bin=ID)
   const binId = new URLSearchParams(location.search).get('bin');
   if (binId) {
+    showLoading('Loading shared dashboard…');
     loadFromCloud(binId)
       .then((payload) => {
         restoreFromPayload(payload);
         history.replaceState({ view: 'dashboard' }, '');
         _showDashboardView();
       })
-      .catch(() => showToast('❌ Could not load shared dashboard'));
+      .catch(() => showToast('❌ Could not load shared dashboard'))
+      .finally(() => hideLoading());
     return;
   }
 
@@ -200,19 +202,27 @@ function onFilePicked(e) {
   const reader   = new FileReader();
 
   reader.onload = (ev) => {
-    const data = isXlsx ? parseXLSX(ev.target.result) : parseCSV(ev.target.result);
-    const snap = { id: snapshotCounter++, label, filename: file.name, data };
-    snapshots.push(snap);
-    e.target.value = ''; // reset so the same file can be re-selected
+    showLoading('Parsing file…');
+    // Defer parsing so the loading overlay renders first
+    setTimeout(() => {
+      try {
+        const data = isXlsx ? parseXLSX(ev.target.result) : parseCSV(ev.target.result);
+        const snap = { id: snapshotCounter++, label, filename: file.name, data };
+        snapshots.push(snap);
+        e.target.value = '';
 
-    // Default compare: first vs last
-    compareFromIdx = 0;
-    compareToIdx   = snapshots.length - 1;
+        compareFromIdx = 0;
+        compareToIdx   = snapshots.length - 1;
 
-    renderSnapshotList();
-    updateCompareSelectors();
-    updateComparePreview();
-    updateShowButton();
+        renderSnapshotList();
+        updateCompareSelectors();
+        updateComparePreview();
+        updateShowButton();
+        showToast(`✓ ${data.length} governors loaded`);
+      } finally {
+        hideLoading();
+      }
+    }, 30);
   };
 
   if (isXlsx) reader.readAsArrayBuffer(file);
@@ -315,7 +325,8 @@ window.showDashboard = function () {
   kvkName = document.getElementById('kvk-name-input').value.trim() || 'KvK Dashboard';
   saveSession(true);
   history.pushState({ view: 'dashboard' }, '');
-  _showDashboardView();
+  showLoading('Building dashboard…');
+  setTimeout(() => { _showDashboardView(); hideLoading(); }, 30);
 };
 
 function _showDashboardView() {
@@ -402,12 +413,15 @@ window.loadDemo = function () {
   compareFromIdx = 0;
   compareToIdx   = 2;
 
-  document.getElementById('kvk-name-input').value = langJa ? 'KvKシーズン5 — デモ' : 'KvK Season 5 — Demo';
-  kvkName = document.getElementById('kvk-name-input').value;
+  kvkName = langJa ? 'KvKシーズン5 — デモ' : 'KvK Season 5 — Demo';
+  document.getElementById('kvk-name-input').value = kvkName;
 
   renderSnapshotList();
   updateCompareSelectors();
-  showDashboard();
+  saveSession(true);
+  history.pushState({ view: 'dashboard' }, '');
+  showLoading('Loading demo…');
+  setTimeout(() => { _showDashboardView(); hideLoading(); }, 30);
 };
 
 // ----------------------------------------------------------------
@@ -527,22 +541,19 @@ window.cloudSave = async function () {
     openModal();
     return;
   }
-  const btn = document.getElementById('btn-cloud-save');
-  btn.textContent = '⏳';
-  btn.disabled = true;
+  showLoading('Saving to cloud…');
   try {
     const binId = await saveToCloud(buildPayload(), kvkName);
     addSavedDashboard({ binId, name: kvkName });
     renderSavedDashboards();
-    const url   = `${location.origin}${location.pathname}?bin=${binId}`;
+    const url = `${location.origin}${location.pathname}?bin=${binId}`;
     openShareModal(url);
     showToast('☁️ Saved!');
   } catch (e) {
     if (e.message === 'NO_KEY') { openModal(); return; }
     showToast('❌ ' + e.message);
   } finally {
-    btn.textContent = '☁️';
-    btn.disabled = false;
+    hideLoading();
   }
 };
 
@@ -588,6 +599,7 @@ window.saveApiKey = async function () {
   status.style.color = '';
   status.textContent = 'Verifying…';
   setApiKey(key);
+  showLoading('Verifying API key…');
   try {
     await saveToCloud({ test: true }, '_test');
     status.style.color = 'var(--green)';
@@ -596,6 +608,8 @@ window.saveApiKey = async function () {
   } catch (e) {
     status.style.color = 'var(--red)';
     status.textContent = '❌ Invalid key: ' + e.message;
+  } finally {
+    hideLoading();
   }
 };
 
@@ -611,6 +625,19 @@ function openShareModal(url) {
 window.closeShareModal = function () {
   document.getElementById('share-modal-backdrop').style.display = 'none';
 };
+
+// ----------------------------------------------------------------
+// Loading overlay
+// ----------------------------------------------------------------
+
+function showLoading(msg = 'Loading…') {
+  document.getElementById('loading-msg').textContent = msg;
+  document.getElementById('loading-overlay').style.display = 'flex';
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').style.display = 'none';
+}
 
 // ----------------------------------------------------------------
 // Toast
