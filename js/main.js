@@ -182,7 +182,7 @@ function renderSavedDashboards() {
           <div class="saved-name">${escHtml(d.name)}</div>
           <div class="saved-date">${date}</div>
         </div>
-        <a class="btn btn-primary saved-load" href="?bin=${encodeURIComponent(d.binId)}">Load</a>
+        <button class="btn btn-primary saved-load" onclick="loadSavedDashboard('${escHtml(d.binId)}')">Load</button>
         <button class="snapshot-remove" onclick="deleteSaved('${escHtml(d.binId)}')" title="Remove">✕</button>
       </div>`;
   }).join('');
@@ -191,6 +191,19 @@ function renderSavedDashboards() {
 window.deleteSaved = function (binId) {
   removeSavedDashboard(binId);
   renderSavedDashboards();
+};
+
+window.loadSavedDashboard = function (binId) {
+  showLoading('Loading dashboard…');
+  loadFromCloud(binId)
+    .then((payload) => {
+      isSharedView = false; // owner loading their own saved dashboard
+      restoreFromPayload(payload);
+      history.pushState({ view: 'dashboard' }, '');
+      _showDashboardView();
+    })
+    .catch(() => showToast('❌ Could not load dashboard'))
+    .finally(() => hideLoading());
 };
 
 // ----------------------------------------------------------------
