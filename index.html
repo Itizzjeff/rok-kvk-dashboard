@@ -13,6 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 
   <!-- App entry point (ES module) -->
   <script type="module" src="js/main.js" defer></script>
@@ -54,7 +55,7 @@
     <div class="upload-grid">
 
       <div class="upload-card" id="drop-start" onclick="document.getElementById('file-start').click()">
-        <input type="file" id="file-start" accept=".csv" tabindex="-1" />
+        <input type="file" id="file-start" accept=".xlsx,.csv" tabindex="-1" />
         <span class="upload-icon">📊</span>
         <div class="upload-label" id="upload-start-label">KvK Start</div>
         <div class="upload-hint"  id="upload-start-hint">CSV export — beginning of KvK</div>
@@ -62,7 +63,7 @@
       </div>
 
       <div class="upload-card" id="drop-end" onclick="document.getElementById('file-end').click()">
-        <input type="file" id="file-end" accept=".csv" tabindex="-1" />
+        <input type="file" id="file-end" accept=".xlsx,.csv" tabindex="-1" />
         <span class="upload-icon">🏆</span>
         <div class="upload-label" id="upload-end-label">KvK End</div>
         <div class="upload-hint"  id="upload-end-hint">CSV export — end of KvK</div>

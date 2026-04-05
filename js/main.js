@@ -3,7 +3,7 @@
  */
 
 import { t, setLang, getLang, initLang } from './i18n.js';
-import { parseCSV }                       from './csv-parser.js';
+import { parseCSV, parseXLSX }             from './csv-parser.js';
 import { processData, computeStats, computeMaxValues, generateDemoData } from './data.js';
 import { initTable, refreshTable, applyFilters, buildAllianceFilter, sortBy, setSortCol } from './table.js';
 import { buildCharts, updateChartTitles }  from './charts.js';
@@ -100,15 +100,23 @@ function setupZone(zoneId, inputId, slot) {
 }
 
 function loadFile(file, slot) {
-  const reader = new FileReader();
+  const isXlsx = file.name.toLowerCase().endsWith('.xlsx');
+  const reader  = new FileReader();
+
   reader.onload = (e) => {
-    const data = parseCSV(e.target.result);
+    const data = isXlsx
+      ? parseXLSX(e.target.result)
+      : parseCSV(e.target.result);
+
     if (slot === 'start') startData = data;
     else                  endData   = data;
+
     markLoaded(slot, data.length);
     updateShowButton();
   };
-  reader.readAsText(file);
+
+  if (isXlsx) reader.readAsArrayBuffer(file);
+  else         reader.readAsText(file);
 }
 
 function markLoaded(slot, count) {
