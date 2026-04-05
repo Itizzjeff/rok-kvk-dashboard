@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Rise of Kingdoms KvK performance dashboard — track kill points, T4/T5 kills, deaths and power across a Kingdom vs. Kingdom event." />
+  <title>RoK KvK Dashboard</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/styles.css" />
+
+  <!-- Third-party CDN libraries (pinned versions) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js" defer></script>
+
+  <!-- App entry point (ES module) -->
+  <script type="module" src="js/main.js" defer></script>
+</head>
+<body>
+
+<!-- ================================================================
+     UPLOAD SCREEN
+     ================================================================ -->
+<div id="upload-screen">
+
+  <!-- Minimal header (no back/share yet) -->
+  <div class="header" style="position:static; margin-bottom:0;">
+    <div>
+      <div class="header-logo">⚔️ RoK KvK Dashboard</div>
+    </div>
+    <div class="header-actions">
+      <div class="lang-toggle" aria-label="Language">
+        <button class="lang-pill active" data-lang="en" onclick="switchLang('en')">EN</button>
+        <button class="lang-pill"        data-lang="ja" onclick="switchLang('ja')">日本語</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:720px; margin:40px auto; padding:0 24px 40px;">
+
+    <h1 class="upload-title" id="upload-title">⚔️ RoK KvK Dashboard</h1>
+    <p class="upload-subtitle" id="upload-subtitle">
+      Upload two CSV exports (KvK start &amp; end) to track performance delta — or just one for a snapshot view.
+    </p>
+
+    <!-- KvK name -->
+    <div class="kvk-name-row">
+      <label id="kvk-name-label" for="kvk-name-input">KvK Name / Season</label>
+      <input type="text" id="kvk-name-input" placeholder="e.g. KvK Season 5 — March 2026" />
+    </div>
+
+    <!-- Drop zones -->
+    <div class="upload-grid">
+
+      <div class="upload-card" id="drop-start" onclick="document.getElementById('file-start').click()">
+        <input type="file" id="file-start" accept=".csv" tabindex="-1" />
+        <span class="upload-icon">📊</span>
+        <div class="upload-label" id="upload-start-label">KvK Start</div>
+        <div class="upload-hint"  id="upload-start-hint">CSV export — beginning of KvK</div>
+        <div class="upload-status" id="status-start"></div>
+      </div>
+
+      <div class="upload-card" id="drop-end" onclick="document.getElementById('file-end').click()">
+        <input type="file" id="file-end" accept=".csv" tabindex="-1" />
+        <span class="upload-icon">🏆</span>
+        <div class="upload-label" id="upload-end-label">KvK End</div>
+        <div class="upload-hint"  id="upload-end-hint">CSV export — end of KvK</div>
+        <div class="upload-status" id="status-end"></div>
+      </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="upload-actions">
+      <button class="btn btn-primary" id="btn-show" onclick="showDashboard()" disabled>
+        Show Dashboard →
+      </button>
+      <span class="upload-sep" id="upload-sep">or</span>
+      <button class="btn" id="btn-demo" onclick="loadDemo()">Load Demo</button>
+    </div>
+
+    <!-- Shared URL loader -->
+    <div class="url-box" id="url-box">
+      <label id="url-box-label">🔗 Load shared URL</label>
+      <div class="url-row">
+        <input type="text" id="url-display" readonly placeholder="URL will appear here…" />
+        <button class="btn" id="btn-copy-url" onclick="copySharedUrl()">Copy</button>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /#upload-screen -->
+
+
+<!-- ================================================================
+     DASHBOARD
+     ================================================================ -->
+<div id="dashboard">
+
+  <!-- Sticky header -->
+  <header class="header">
+    <div>
+      <div class="header-logo" id="header-logo">⚔️ KvK Dashboard</div>
+      <div class="header-sub"  id="header-sub">Rise of Kingdoms</div>
+    </div>
+    <div class="header-actions">
+      <div class="lang-toggle" aria-label="Language">
+        <button class="lang-pill active" data-lang="en" onclick="switchLang('en')">EN</button>
+        <button class="lang-pill"        data-lang="ja" onclick="switchLang('ja')">日本語</button>
+      </div>
+      <button class="btn" id="btn-share" onclick="shareKvK()">🔗 Share</button>
+      <button class="btn btn-danger" id="btn-back" onclick="resetAll()">← Back</button>
+    </div>
+  </header>
+
+  <div class="dashboard-inner">
+
+    <!-- KvK banner -->
+    <div class="kvk-banner">
+      <div>
+        <div class="kvk-banner-name" id="kvk-bar-name">KvK Dashboard</div>
+        <div class="kvk-banner-meta" id="kvk-bar-meta"></div>
+      </div>
+      <span class="kvk-banner-tag" id="kvk-bar-tag">LIVE</span>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stat-cards" id="stat-cards"></div>
+
+    <!-- Tab navigation -->
+    <nav class="tabs" aria-label="Views">
+      <button class="tab active" onclick="switchTab('rankings', this)">🏆 Rankings</button>
+      <button class="tab"        onclick="switchTab('charts', this)">📈 Development</button>
+    </nav>
+
+    <!-- ── Rankings tab ── -->
+    <div id="tab-rankings">
+
+      <div class="filters">
+        <input
+          class="filter-input"
+          type="search"
+          id="search-input"
+          placeholder="🔍 Search governor…"
+          oninput="window.__table.applyFilters()"
+          aria-label="Search governor"
+        />
+        <select
+          class="filter-select"
+          id="alliance-filter"
+          onchange="window.__table.applyFilters()"
+          aria-label="Filter by alliance"
+        >
+          <option value="">All alliances</option>
+        </select>
+
+        <div class="sort-pills" role="group" aria-label="Sort by">
+          <button class="sort-pill active" data-col="kp"      onclick="window.__table.setSortCol('kp')">Kill Points</button>
+          <button class="sort-pill"        data-col="t5kills" onclick="window.__table.setSortCol('t5kills')">T5 Kills</button>
+          <button class="sort-pill"        data-col="t4kills" onclick="window.__table.setSortCol('t4kills')">T4 Kills</button>
+          <button class="sort-pill"        data-col="deaths"  onclick="window.__table.setSortCol('deaths')">Deaths</button>
+          <button class="sort-pill"        data-col="power"   onclick="window.__table.setSortCol('power')">Power</button>
+        </div>
+
+        <span class="filter-count" id="filter-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table id="main-table" aria-label="Governor rankings">
+            <thead>
+              <tr>
+                <th style="width:44px">#</th>
+                <th class="sortable" onclick="window.__table.sortBy('name')">Governor</th>
+                <th class="sortable" onclick="window.__table.sortBy('kp')">Kill Points</th>
+                <th class="sortable" onclick="window.__table.sortBy('t5kills')">T5 Kills</th>
+                <th class="sortable" onclick="window.__table.sortBy('t4kills')">T4 Kills</th>
+                <th class="sortable" onclick="window.__table.sortBy('deaths')">Deaths</th>
+                <th class="sortable" onclick="window.__table.sortBy('power')">Power</th>
+                <th class="sortable" onclick="window.__table.sortBy('kd')">K/D</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /#tab-rankings -->
+
+    <!-- ── Charts tab ── -->
+    <div id="tab-charts" style="display:none">
+      <div class="charts-grid">
+
+        <div class="chart-card">
+          <div class="chart-title">Top 10 — Kill Points</div>
+          <div class="chart-wrap"><canvas id="chart-kp"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Top 10 — T5 Kills</div>
+          <div class="chart-wrap"><canvas id="chart-t5"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Top 10 — Deaths</div>
+          <div class="chart-wrap"><canvas id="chart-deaths"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Top 10 — Power Gain</div>
+          <div class="chart-wrap"><canvas id="chart-power"></canvas></div>
+        </div>
+
+      </div>
+    </div><!-- /#tab-charts -->
+
+  </div><!-- /.dashboard-inner -->
+</div><!-- /#dashboard -->
+
+<!-- Toast notification -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+</body>
+</html>
