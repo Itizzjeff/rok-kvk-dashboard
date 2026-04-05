@@ -16,7 +16,7 @@ import { processData, computeStats, computeMaxValues, generateDemoData } from '.
 import { initTable, refreshTable, applyFilters, buildAllianceFilter, sortBy, setSortCol } from './table.js';
 import { buildCharts, updateChartTitles }                               from './charts.js';
 import { encodeAndShare, decodeFromUrl, clearUrlParam } from './share.js';
-import { saveToCloud, loadFromCloud, getApiKey, setApiKey } from './cloud.js';
+import { saveToCloud, loadFromCloud, getApiKey, setApiKey, getSavedDashboards, addSavedDashboard, removeSavedDashboard } from './cloud.js';
 
 // ----------------------------------------------------------------
 // State
@@ -43,6 +43,7 @@ let activeTab   = 'rankings';
 document.addEventListener('DOMContentLoaded', () => {
   initLang();
   renderUploadScreen();
+  renderSavedDashboards();
   setupLangToggle();
 
   document.getElementById('file-picker').addEventListener('change', onFilePicked);
@@ -154,6 +155,39 @@ function renderUploadScreen() {
   document.getElementById('btn-copy-url').textContent       = t('share.copy');
   updateShowButton();
 }
+
+// ----------------------------------------------------------------
+// Saved dashboards list
+// ----------------------------------------------------------------
+
+function renderSavedDashboards() {
+  const list = getSavedDashboards();
+  const container = document.getElementById('saved-dashboards');
+  if (!container) return;
+
+  if (!list.length) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+  container.querySelector('.saved-list').innerHTML = list.map(d => {
+    const date = new Date(d.savedAt).toLocaleDateString();
+    return `
+      <div class="saved-row">
+        <div class="saved-info">
+          <div class="saved-name">${escHtml(d.name)}</div>
+          <div class="saved-date">${date}</div>
+        </div>
+        <a class="btn btn-primary saved-load" href="?bin=${encodeURIComponent(d.binId)}">Load</a>
+        <button class="snapshot-remove" onclick="deleteSaved('${escHtml(d.binId)}')" title="Remove">✕</button>
+      </div>`;
+  }).join('');
+}
+
+window.deleteSaved = function (binId) {
+  removeSavedDashboard(binId);
+  renderSavedDashboards();
+};
 
 // ----------------------------------------------------------------
 // Snapshot management
@@ -503,6 +537,8 @@ window.cloudSave = async function () {
   btn.disabled = true;
   try {
     const binId = await saveToCloud(buildPayload(), kvkName);
+    addSavedDashboard({ binId, name: kvkName });
+    renderSavedDashboards();
     const url   = `${location.origin}${location.pathname}?bin=${binId}`;
     openShareModal(url);
     showToast('☁️ Saved!');

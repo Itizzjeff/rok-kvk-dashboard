@@ -73,3 +73,29 @@ export function setApiKey(key) {
 export function clearApiKey() {
   localStorage.removeItem(KEY_STORAGE);
 }
+
+// ----------------------------------------------------------------
+// Saved dashboards list (stored in localStorage)
+// ----------------------------------------------------------------
+
+const SAVED_KEY = 'rok-saved-dashboards';
+
+/** @returns {{ binId: string, name: string, savedAt: string }[]} */
+export function getSavedDashboards() {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]');
+  } catch { return []; }
+}
+
+/** @param {{ binId: string, name: string }} entry */
+export function addSavedDashboard(entry) {
+  const list = getSavedDashboards().filter(d => d.binId !== entry.binId);
+  list.unshift({ ...entry, savedAt: new Date().toISOString() });
+  localStorage.setItem(SAVED_KEY, JSON.stringify(list.slice(0, 20)));
+}
+
+/** @param {string} binId */
+export function removeSavedDashboard(binId) {
+  const list = getSavedDashboards().filter(d => d.binId !== binId);
+  localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+}

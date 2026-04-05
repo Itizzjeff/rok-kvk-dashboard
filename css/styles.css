@@ -71,16 +71,31 @@ body {
   white-space: nowrap;
 }
 
+.header-brand {
+  min-width: 0;
+  flex-shrink: 1;
+}
+
 .header-sub {
   color: var(--text2);
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-actions {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  padding: 7px 10px;
+  font-size: 16px;
+  line-height: 1;
 }
 
 /* ---------- Buttons ---------- */
@@ -156,7 +171,7 @@ body {
 }
 
 .lang-pill {
-  padding: 4px 12px;
+  padding: 4px 9px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 700;
@@ -809,6 +824,50 @@ tbody tr:hover td { background: rgba(88, 166, 255, 0.04); }
   font-size: 13px;
   padding: 5px 10px;
   max-width: 160px;
+}
+
+/* ---------- Saved dashboards ---------- */
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.saved-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+
+.saved-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.saved-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-date {
+  font-size: 12px;
+  color: var(--text2);
+  margin-top: 2px;
+}
+
+.saved-load {
+  flex-shrink: 0;
+  text-decoration: none;
+  font-size: 13px;
+  padding: 6px 14px;
 }
 
 /* ---------- Toast ---------- */
