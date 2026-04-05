@@ -15,7 +15,8 @@ import { parseCSV, parseXLSX }                                          from './
 import { processData, computeStats, computeMaxValues, generateDemoData } from './data.js';
 import { initTable, refreshTable, applyFilters, buildAllianceFilter, sortBy, setSortCol } from './table.js';
 import { buildCharts, updateChartTitles }                               from './charts.js';
-import { encodeAndShare, decodeFromUrl, displaySharedUrl, copyDisplayedUrl, clearUrlParam } from './share.js';
+import { encodeAndShare, decodeFromUrl, clearUrlParam } from './share.js';
+import { saveToCloud, loadFromCloud, getApiKey, setApiKey } from './cloud.js';
 
 // ----------------------------------------------------------------
 // State
@@ -57,7 +58,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // 1. Try shared URL first
+  // 1a. Cloud bin (?bin=ID)
+  const binId = new URLSearchParams(location.search).get('bin');
+  if (binId) {
+    loadFromCloud(binId)
+      .then((payload) => {
+        restoreFromPayload(payload);
+        history.replaceState({ view: 'dashboard' }, '');
+        _showDashboardView();
+      })
+      .catch(() => showToast('❌ Could not load shared dashboard'));
+    return;
+  }
+
+  // 1b. Try embedded URL payload (?d=…)
   const urlPayload = decodeFromUrl();
   if (urlPayload) {
     restoreFromPayload(urlPayload);
@@ -467,24 +481,107 @@ window.switchLang = function (lang) {
 };
 
 // ----------------------------------------------------------------
-// Share
+// Cloud Save
 // ----------------------------------------------------------------
 
-window.shareKvK = function () {
-  const payload = {
+function buildPayload() {
+  return {
     name:      kvkName,
     snapshots: snapshots.map(({ label, filename, data }) => ({ label, filename, data })),
     fromIdx:   compareFromIdx,
     toIdx:     compareToIdx,
   };
-  const url = encodeAndShare(payload);
-  displaySharedUrl(url);
+}
+
+window.cloudSave = async function () {
+  if (!getApiKey()) {
+    openModal();
+    return;
+  }
+  const btn = document.getElementById('btn-cloud-save');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  try {
+    const binId = await saveToCloud(buildPayload(), kvkName);
+    const url   = `${location.origin}${location.pathname}?bin=${binId}`;
+    openShareModal(url);
+    showToast('☁️ Saved!');
+  } catch (e) {
+    if (e.message === 'NO_KEY') { openModal(); return; }
+    showToast('❌ ' + e.message);
+  } finally {
+    btn.textContent = '☁️ Save';
+    btn.disabled = false;
+  }
+};
+
+// Plain URL share (no cloud)
+window.shareUrl = function () {
+  const url = encodeAndShare(buildPayload());
+  openShareModal(url);
+};
+
+window.copyShareUrl = function () {
+  const url = document.getElementById('share-url-input').value;
+  navigator.clipboard?.writeText(url).catch(() => {});
   showToast(t('share.copied'));
 };
 
-window.copySharedUrl = function () {
-  copyDisplayedUrl();
-  showToast(t('share.copied'));
+// ----------------------------------------------------------------
+// API Key Modal
+// ----------------------------------------------------------------
+
+window.openModal = function () {
+  const inp = document.getElementById('apikey-input');
+  inp.value = getApiKey() ?? '';
+  document.getElementById('apikey-status').textContent = getApiKey() ? '✓ Key already saved' : '';
+  document.getElementById('modal-backdrop').style.display = 'flex';
+  setTimeout(() => inp.focus(), 50);
+};
+
+window.closeModal = function () {
+  document.getElementById('modal-backdrop').style.display = 'none';
+};
+
+window.saveApiKey = async function () {
+  const key = document.getElementById('apikey-input').value.trim();
+  const status = document.getElementById('apikey-status');
+  if (!key) { status.textContent = 'Please enter a key.'; return; }
+
+  status.textContent = 'Verifying…';
+  try {
+    // Test the key with a tiny save
+    await saveToCloud({ test: true }, '_test');
+    setApiKey(key);
+    status.style.color = 'var(--green)';
+    status.textContent = '✓ Key saved! You can now use ☁️ Save.';
+    setTimeout(closeModal, 1500);
+  } catch {
+    // Key was already set by saveToCloud attempt — set it first then test
+    setApiKey(key);
+    try {
+      await saveToCloud({ test: true }, '_test');
+      status.style.color = 'var(--green)';
+      status.textContent = '✓ Key saved!';
+      setTimeout(closeModal, 1500);
+    } catch (e2) {
+      status.style.color = 'var(--red)';
+      status.textContent = '❌ Invalid key: ' + e2.message;
+    }
+  }
+};
+
+// ----------------------------------------------------------------
+// Share URL Modal
+// ----------------------------------------------------------------
+
+function openShareModal(url) {
+  document.getElementById('share-url-input').value = url;
+  document.getElementById('share-modal-backdrop').style.display = 'flex';
+}
+
+window.closeShareModal = function () {
+  document.getElementById('share-modal-backdrop').style.display = 'none';
 };
 
 // ----------------------------------------------------------------

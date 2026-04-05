@@ -112,7 +112,8 @@
         <button class="lang-pill active" data-lang="en" onclick="switchLang('en')">EN</button>
         <button class="lang-pill"        data-lang="ja" onclick="switchLang('ja')">日本語</button>
       </div>
-      <button class="btn" id="btn-share" onclick="shareKvK()">🔗 Share</button>
+      <button class="btn" id="btn-cloud-save" onclick="cloudSave()">☁️ Save</button>
+      <button class="btn btn-ghost" id="btn-share" onclick="shareUrl()">🔗 URL</button>
       <button class="btn btn-danger" id="btn-back" onclick="resetAll()">← Back</button>
     </div>
   </header>
@@ -212,6 +213,57 @@
 </div><!-- /#dashboard -->
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ================================================================
+     API KEY MODAL
+     ================================================================ -->
+<div id="modal-backdrop" class="modal-backdrop" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">☁️ Cloud Save Setup</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc" id="modal-desc">
+        To save dashboards to the cloud, you need a free <strong>JSONBin.io</strong> API key.
+        Your key is stored only in your browser — never on any server.
+      </p>
+      <ol class="modal-steps">
+        <li>Go to <strong>jsonbin.io</strong> → Sign up free</li>
+        <li>Dashboard → API Keys → copy your <strong>Master Key</strong></li>
+        <li>Paste it below</li>
+      </ol>
+      <div style="display:flex; gap:8px; margin-top:16px;">
+        <input
+          type="password"
+          id="apikey-input"
+          class="filter-input"
+          style="flex:1; width:auto;"
+          placeholder="$2a$10$…"
+        />
+        <button class="btn btn-primary" onclick="saveApiKey()">Save Key</button>
+      </div>
+      <div id="apikey-status" style="font-size:12px; margin-top:8px; color:var(--text2);"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Share URL modal -->
+<div id="share-modal-backdrop" class="modal-backdrop" style="display:none" onclick="closeShareModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">🔗 Share URL</span>
+      <button class="modal-close" onclick="closeShareModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">Anyone with this link can view this dashboard — all data is embedded in the URL.</p>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <input type="text" id="share-url-input" class="filter-input" style="flex:1;width:auto;font-family:monospace;font-size:11px;" readonly />
+        <button class="btn btn-primary" onclick="copyShareUrl()">Copy</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
