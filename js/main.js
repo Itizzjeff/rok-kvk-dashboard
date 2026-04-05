@@ -361,8 +361,9 @@ function renderDashboard() {
   document.getElementById('header-logo').textContent = t('header.logo');
   document.getElementById('header-sub').textContent  = `${processed.length} governors`;
   updateLangSwitchBtn();
-  document.getElementById('btn-cloud-save').style.display = isSharedView ? 'none' : '';
-  document.getElementById('btn-share').style.display      = isSharedView ? 'none' : '';
+  const viewerOnly = isSharedView && !getApiKey();
+  document.getElementById('btn-cloud-save').style.display = viewerOnly ? 'none' : '';
+  document.getElementById('btn-share').style.display      = viewerOnly ? 'none' : '';
 
   // Banner
   document.getElementById('kvk-bar-name').textContent = kvkName;
@@ -392,16 +393,24 @@ window.onDashCompareChange = function () {
 };
 
 window.resetAll = function () {
-  snapshots       = [];
-  snapshotCounter = 0;
-  compareFromIdx  = 0;
-  compareToIdx    = 1;
-  processed       = [];
-  chartsBuilt     = false;
-  activeTab       = 'rankings';
-  isSharedView    = false;
+  // Owner viewing a shared dashboard: keep snapshots so they can add more
+  const ownerSharedView = isSharedView && !!getApiKey();
+
+  if (!ownerSharedView) {
+    snapshots       = [];
+    snapshotCounter = 0;
+    compareFromIdx  = 0;
+    compareToIdx    = 1;
+    processed       = [];
+  }
+
+  chartsBuilt  = false;
+  activeTab    = 'rankings';
+  isSharedView = false;
 
   renderSnapshotList();
+  updateCompareSelectors();
+  updateShowButton();
   clearSession();
   clearUrlParam();
   history.pushState({ view: 'upload' }, '');
