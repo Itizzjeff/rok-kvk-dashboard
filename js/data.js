@@ -170,20 +170,29 @@ export function generateDemoData() {
     Math.floor(Math.random() * (max - min + 1)) + min;
 
   const makeSnapshot = (scale) =>
-    names.map((name, i) => ({
-      id:        String(1000 + i),
-      name,
-      alliance:  alliances[i % alliances.length],
-      power:     Math.floor(rnd(50, 200) * 1e6 * scale),
-      kp:        Math.floor(rnd(200, 800) * 1e6 * scale),
-      t5kills:   Math.floor(rnd(50, 300) * 1e3 * scale),
-      t4kills:   Math.floor(rnd(100, 600) * 1e3 * scale),
-      t3kills:   0,
-      t2kills:   0,
-      t1kills:   0,
-      deaths:    Math.floor(rnd(80, 400) * 1e3 * scale),
-      resources: 0,
-    }));
+    names.map((name, i) => {
+      const t5d = Math.floor(rnd(20, 100) * 1e3 * scale);
+      const t4d = Math.floor(rnd(40, 200) * 1e3 * scale);
+      const t3d = Math.floor(rnd(10,  50) * 1e3 * scale);
+      return {
+        id:           String(1000 + i),
+        name,
+        alliance:     alliances[i % alliances.length],
+        power:        Math.floor(rnd(50, 200) * 1e6 * scale),
+        highestPower: Math.floor(rnd(50, 200) * 1e6 * scale),
+        kp:           Math.floor(rnd(200, 800) * 1e6 * scale),
+        t5kills:      Math.floor(rnd(50, 300) * 1e3 * scale),
+        t4kills:      Math.floor(rnd(100, 600) * 1e3 * scale),
+        t3kills:      0,
+        t2kills:      0,
+        t1kills:      0,
+        t5deaths:     t5d,
+        t4deaths:     t4d,
+        t3deaths:     t3d,
+        deaths:       t5d + t4d + t3d,
+        resources:    0,
+      };
+    });
 
   return {
     startData: makeSnapshot(0.5),

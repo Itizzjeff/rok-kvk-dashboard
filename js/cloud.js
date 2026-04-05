@@ -54,10 +54,8 @@ export async function saveToCloud(payload, name = 'KvK Dashboard') {
  * @param {string} [keyOverride] - optional key to use instead of stored one
  * @returns {Promise<object>}
  */
-export async function loadFromCloud(binId, keyOverride) {
-  const apiKey = keyOverride ?? null;
-  const headers = apiKey ? { 'X-Master-Key': apiKey } : {};
-  const res = await fetch(`${BASE_URL}/${binId}/latest`, { headers });
+export async function loadFromCloud(binId) {
+  const res = await fetch(`${BASE_URL}/${binId}/latest`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   return data.record;

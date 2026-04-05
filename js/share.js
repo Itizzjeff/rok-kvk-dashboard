@@ -48,11 +48,8 @@ export function decodeFromUrl() {
     const raw     = window.LZString.decompressFromEncodedURIComponent(d);
     const payload = JSON.parse(raw);
     if (typeof payload !== 'object' || payload === null) return null;
-    return {
-      name:  payload.name  ?? '',
-      start: payload.start ?? null,
-      end:   payload.end   ?? null,
-    };
+    if (!Array.isArray(payload.snapshots)) return null;
+    return payload;
   } catch {
     console.error('[share] Failed to decode URL payload');
     return null;

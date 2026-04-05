@@ -68,14 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         history.replaceState({ view: 'dashboard' }, '');
         _showDashboardView();
       })
-      .catch((err) => {
-        if (err.message.includes('401') || err.message.includes('403')) {
-          // Private bin — ask for API key then retry
-          openModalForBinLoad(binId);
-        } else {
-          showToast('❌ Could not load shared dashboard');
-        }
-      });
+      .catch(() => showToast('❌ Could not load shared dashboard'));
     return;
   }
 
@@ -158,8 +151,6 @@ function renderUploadScreen() {
   document.getElementById('btn-show').textContent           = t('upload.btnShow');
   document.getElementById('btn-demo').textContent           = t('upload.btnDemo');
   document.getElementById('upload-sep').textContent         = t('upload.or');
-  document.getElementById('url-box-label').textContent      = t('upload.urlLabel');
-  document.getElementById('btn-copy-url').textContent       = t('share.copy');
   updateShowButton();
 }
 
@@ -392,7 +383,6 @@ window.resetAll = function () {
   chartsBuilt     = false;
   activeTab       = 'rankings';
 
-  document.getElementById('url-box').classList.remove('visible');
   renderSnapshotList();
   clearSession();
   clearUrlParam();
@@ -509,8 +499,6 @@ window.switchLang = function (lang) {
 
   if (document.getElementById('dashboard').style.display !== 'none') {
     document.getElementById('header-logo').textContent = t('header.logo');
-    document.getElementById('btn-share').textContent   = t('header.share');
-    document.getElementById('btn-back').textContent    = t('header.back');
     const stats = computeStats(processed);
     renderStatCards(stats);
     document.getElementById('tab-btn-rankings').textContent = t('tab.rankings');
@@ -580,51 +568,24 @@ window.copyShareUrl = function () {
 // ----------------------------------------------------------------
 
 window.openModal = function () {
-  _pendingBinId = null;
   const inp = document.getElementById('apikey-input');
   inp.value = getApiKey() ?? '';
   document.getElementById('apikey-status').textContent = getApiKey() ? '✓ Key already saved' : '';
+  document.getElementById('apikey-status').style.color = '';
   document.getElementById('modal-backdrop').style.display = 'flex';
   setTimeout(() => inp.focus(), 50);
 };
-
-let _pendingBinId = null;
-
-function openModalForBinLoad(binId) {
-  _pendingBinId = binId;
-  const inp = document.getElementById('apikey-input');
-  inp.value = getApiKey() ?? '';
-  document.getElementById('apikey-status').textContent = '🔒 This dashboard is private — enter the API key to load it.';
-  document.getElementById('modal-backdrop').style.display = 'flex';
-  setTimeout(() => inp.focus(), 50);
-}
 
 window.closeModal = function () {
   document.getElementById('modal-backdrop').style.display = 'none';
 };
 
 window.saveApiKey = async function () {
-  const key = document.getElementById('apikey-input').value.trim();
+  const key    = document.getElementById('apikey-input').value.trim();
   const status = document.getElementById('apikey-status');
   if (!key) { status.textContent = 'Please enter a key.'; return; }
 
-  // If we're loading a private bin, just try loading with this key directly
-  if (_pendingBinId) {
-    status.textContent = 'Loading…';
-    try {
-      const payload = await loadFromCloud(_pendingBinId, key);
-      setApiKey(key);
-      closeModal();
-      restoreFromPayload(payload);
-      history.replaceState({ view: 'dashboard' }, '');
-      _showDashboardView();
-    } catch (e) {
-      status.style.color = 'var(--red)';
-      status.textContent = '❌ Wrong key or invalid dashboard.';
-    }
-    return;
-  }
-
+  status.style.color = '';
   status.textContent = 'Verifying…';
   setApiKey(key);
   try {
