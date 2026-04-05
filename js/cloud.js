@@ -33,7 +33,7 @@ export async function saveToCloud(payload, name = 'KvK Dashboard') {
       'Content-Type': 'application/json',
       'X-Master-Key':  apiKey,
       'X-Bin-Name':    name.slice(0, 128),
-      'X-Bin-Private': 'false',
+      'X-Bin-Private': 'true',
     },
     body: JSON.stringify(payload),
   });
@@ -49,12 +49,15 @@ export async function saveToCloud(payload, name = 'KvK Dashboard') {
 
 /**
  * Load a dashboard payload from JSONBin by ID.
- * No API key required (public bins).
+ * Sends API key if available (required for private bins).
  * @param {string} binId
+ * @param {string} [keyOverride] - optional key to use instead of stored one
  * @returns {Promise<object>}
  */
-export async function loadFromCloud(binId) {
-  const res = await fetch(`${BASE_URL}/${binId}/latest`);
+export async function loadFromCloud(binId, keyOverride) {
+  const apiKey = keyOverride ?? getApiKey();
+  const headers = apiKey ? { 'X-Master-Key': apiKey } : {};
+  const res = await fetch(`${BASE_URL}/${binId}/latest`, { headers });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   return data.record;

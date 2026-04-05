@@ -68,7 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
         history.replaceState({ view: 'dashboard' }, '');
         _showDashboardView();
       })
-      .catch(() => showToast('❌ Could not load shared dashboard'));
+      .catch((err) => {
+        if (err.message.includes('401') || err.message.includes('403')) {
+          // Private bin — ask for API key then retry
+          openModalForBinLoad(binId);
+        } else {
+          showToast('❌ Could not load shared dashboard');
+        }
+      });
     return;
   }
 
@@ -573,12 +580,24 @@ window.copyShareUrl = function () {
 // ----------------------------------------------------------------
 
 window.openModal = function () {
+  _pendingBinId = null;
   const inp = document.getElementById('apikey-input');
   inp.value = getApiKey() ?? '';
   document.getElementById('apikey-status').textContent = getApiKey() ? '✓ Key already saved' : '';
   document.getElementById('modal-backdrop').style.display = 'flex';
   setTimeout(() => inp.focus(), 50);
 };
+
+let _pendingBinId = null;
+
+function openModalForBinLoad(binId) {
+  _pendingBinId = binId;
+  const inp = document.getElementById('apikey-input');
+  inp.value = getApiKey() ?? '';
+  document.getElementById('apikey-status').textContent = '🔒 This dashboard is private — enter the API key to load it.';
+  document.getElementById('modal-backdrop').style.display = 'flex';
+  setTimeout(() => inp.focus(), 50);
+}
 
 window.closeModal = function () {
   document.getElementById('modal-backdrop').style.display = 'none';
@@ -589,26 +608,33 @@ window.saveApiKey = async function () {
   const status = document.getElementById('apikey-status');
   if (!key) { status.textContent = 'Please enter a key.'; return; }
 
+  // If we're loading a private bin, just try loading with this key directly
+  if (_pendingBinId) {
+    status.textContent = 'Loading…';
+    try {
+      const payload = await loadFromCloud(_pendingBinId, key);
+      setApiKey(key);
+      closeModal();
+      restoreFromPayload(payload);
+      history.replaceState({ view: 'dashboard' }, '');
+      _showDashboardView();
+    } catch (e) {
+      status.style.color = 'var(--red)';
+      status.textContent = '❌ Wrong key or invalid dashboard.';
+    }
+    return;
+  }
+
   status.textContent = 'Verifying…';
+  setApiKey(key);
   try {
-    // Test the key with a tiny save
     await saveToCloud({ test: true }, '_test');
-    setApiKey(key);
     status.style.color = 'var(--green)';
     status.textContent = '✓ Key saved! You can now use ☁️ Save.';
     setTimeout(closeModal, 1500);
-  } catch {
-    // Key was already set by saveToCloud attempt — set it first then test
-    setApiKey(key);
-    try {
-      await saveToCloud({ test: true }, '_test');
-      status.style.color = 'var(--green)';
-      status.textContent = '✓ Key saved!';
-      setTimeout(closeModal, 1500);
-    } catch (e2) {
-      status.style.color = 'var(--red)';
-      status.textContent = '❌ Invalid key: ' + e2.message;
-    }
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = '❌ Invalid key: ' + e.message;
   }
 };
 
