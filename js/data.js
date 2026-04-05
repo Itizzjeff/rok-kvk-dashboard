@@ -73,10 +73,11 @@ export function processData(startData, endData) {
     const key = gov.id || gov.name;
     const prev = startLookup?.get(key) ?? null;
 
-    const delta = (field) => (prev ? gov[field] - prev[field] : gov[field]);
+    const delta = (field) => (prev ? gov[field] - prev[field] : null);
 
     return {
       ...gov,
+      // Delta fields — null when no previous snapshot exists
       dPower:   delta('power'),
       dKp:      delta('kp'),
       dT5kills: delta('t5kills'),
@@ -94,19 +95,35 @@ export function processData(startData, endData) {
  * @returns {Object}
  */
 export function computeStats(rows) {
-  const sum = (field) => rows.reduce((acc, r) => acc + r[field], 0);
+  const sum = (field) => rows.reduce((acc, r) => acc + (r[field] ?? 0), 0);
 
-  const topBy = (field) =>
-    rows.length ? rows.slice().sort((a, b) => b[field] - a[field])[0] : null;
+  // Sort by delta when available, fall back to absolute value
+  const topBy = (absField, deltaField) => {
+    if (!rows.length) return null;
+    return rows.slice().sort((a, b) => {
+      const av = a.hasDelta ? (a[deltaField] ?? 0) : a[absField];
+      const bv = b.hasDelta ? (b[deltaField] ?? 0) : b[absField];
+      return bv - av;
+    })[0];
+  };
+
+  const hasDelta = rows.some((r) => r.hasDelta);
 
   return {
-    total:      rows.length,
-    totalKp:    sum('dKp'),
-    totalT5:    sum('dT5kills'),
-    totalT4:    sum('dT4kills'),
-    totalDeaths: sum('dDeaths'),
-    topKp:      topBy('dKp'),
-    topT5:      topBy('dT5kills'),
+    total:       rows.length,
+    hasDelta,
+    // Current absolute totals (from the "To" snapshot)
+    totalKp:     sum('kp'),
+    totalT5:     sum('t5kills'),
+    totalT4:     sum('t4kills'),
+    totalDeaths: sum('deaths'),
+    // Delta totals (only meaningful when hasDelta)
+    deltaKp:     sum('dKp'),
+    deltaT5:     sum('dT5kills'),
+    deltaT4:     sum('dT4kills'),
+    deltaDeaths: sum('dDeaths'),
+    topKp:       topBy('kp', 'dKp'),
+    topT5:       topBy('t5kills', 'dT5kills'),
   };
 }
 
@@ -119,9 +136,8 @@ export function computeMaxValues(rows) {
   const fields = ['kp', 't5kills', 't4kills', 'deaths', 'power'];
   const maxValues = {};
   for (const f of fields) {
-    const dField = 'd' + f.charAt(0).toUpperCase() + f.slice(1);
-    const values = rows.map((r) => (r.hasDelta ? r[dField] ?? 0 : r[f] ?? 0));
-    maxValues[f] = Math.max(1, ...values);
+    // Bar widths always scale to absolute current values
+    maxValues[f] = Math.max(1, ...rows.map((r) => r[f] ?? 0));
   }
   return maxValues;
 }

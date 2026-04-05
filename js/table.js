@@ -3,7 +3,6 @@
  */
 
 import { t } from './i18n.js';
-import { effectiveValue } from './data.js';
 
 /** @type {import('./data.js').ProcessedGovernor[]} */
 let allRows = [];
@@ -101,21 +100,25 @@ export function buildAllianceFilter(rows) {
 // Internal helpers
 // ----------------------------------------------------------------
 
+/** Return the sort value for a governor + column.
+ *  When a delta exists, sort by delta (= KvK contribution).
+ *  Fall back to absolute current value for single-snapshot mode. */
+function sortValue(gov, col) {
+  if (col === 'kd')   return gov.kd;
+  if (col === 'name') return gov.name;
+  const dField = 'd' + col.charAt(0).toUpperCase() + col.slice(1);
+  return gov.hasDelta ? (gov[dField] ?? 0) : (gov[col] ?? 0);
+}
+
 function sortRows(rows) {
   return rows.slice().sort((a, b) => {
-    let av, bv;
     if (sortCol === 'name') {
-      av = a.name;
-      bv = b.name;
-      return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+      return sortDir === 'asc'
+        ? a.name.localeCompare(b.name)
+        : b.name.localeCompare(a.name);
     }
-    if (sortCol === 'kd') {
-      av = a.kd;
-      bv = b.kd;
-    } else {
-      av = effectiveValue(a, sortCol);
-      bv = effectiveValue(b, sortCol);
-    }
+    const av = sortValue(a, sortCol);
+    const bv = sortValue(b, sortCol);
     return sortDir === 'asc' ? av - bv : bv - av;
   });
 }
@@ -167,14 +170,17 @@ function buildRow(gov, rank) {
 }
 
 function barCell(gov, field, color) {
-  const value   = effectiveValue(gov, field);
+  // Always show the current absolute value as the main number
+  const current = gov[field] ?? 0;
   const max     = maxValues[field] ?? 1;
-  const pct     = Math.max(0, Math.min(100, (value / max) * 100));
-  const deltaEl = buildDelta(gov, field);
+  const pct     = Math.max(0, Math.min(100, (current / max) * 100));
+
+  // Show delta badge only when a previous snapshot exists
+  const deltaEl = deltaBadge(gov, field);
 
   return `<td class="bar-cell">
     <div class="bar-wrap">
-      <span class="bar-val">${fmtNum(value)}${deltaEl}</span>
+      <span class="bar-val">${fmtNum(current)}${deltaEl}</span>
       <div class="bar">
         <div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
       </div>
@@ -182,16 +188,12 @@ function barCell(gov, field, color) {
   </td>`;
 }
 
-/**
- * Build the delta badge for a field (only shown in delta mode where the
- * raw end value differs from the delta).
- */
-function buildDelta(gov, field) {
+function deltaBadge(gov, field) {
   if (!gov.hasDelta) return '';
   const dField = 'd' + field.charAt(0).toUpperCase() + field.slice(1);
-  const delta = gov[dField] ?? 0;
-  if (delta === gov[field]) return ''; // delta === raw means no start data was matched
-  const cls = delta >= 0 ? 'delta-pos' : 'delta-neg';
+  const delta  = gov[dField];
+  if (delta === null || delta === undefined) return '';
+  const cls  = delta >= 0 ? 'delta-pos' : 'delta-neg';
   const sign = delta >= 0 ? '+' : '';
   return `<span class="delta ${cls}">${sign}${fmtNum(delta)}</span>`;
 }

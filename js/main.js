@@ -307,42 +307,41 @@ function fmtNum(n) {
   return String(n);
 }
 
+function statCard(label, colorCls, current, delta) {
+  const deltaHtml = delta !== null
+    ? `<span style="font-size:12px;font-weight:600;color:${delta >= 0 ? 'var(--green)' : 'var(--red)'}">
+         ${delta >= 0 ? '+' : ''}${fmtNum(delta)}
+       </span>`
+    : '';
+  return `
+    <div class="stat-card">
+      <div class="stat-card-label">${label}</div>
+      <div class="stat-card-value ${colorCls}">${fmtNum(current)}</div>
+      <div class="stat-card-sub">${t('stat.kpTotal')} ${deltaHtml}</div>
+    </div>`;
+}
+
 function renderStatCards(stats) {
+  const d = stats.hasDelta;
   document.getElementById('stat-cards').innerHTML = `
     <div class="stat-card">
       <div class="stat-card-label">${t('stat.governors')}</div>
       <div class="stat-card-value text-accent">${stats.total}</div>
       <div class="stat-card-sub">${t('stat.total')}</div>
     </div>
-    <div class="stat-card">
-      <div class="stat-card-label">${t('stat.kp')}</div>
-      <div class="stat-card-value text-purple">${fmtNum(stats.totalKp)}</div>
-      <div class="stat-card-sub">${t('stat.kpTotal')}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">${t('stat.t5')}</div>
-      <div class="stat-card-value text-orange">${fmtNum(stats.totalT5)}</div>
-      <div class="stat-card-sub">${t('stat.kpTotal')}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">${t('stat.t4')}</div>
-      <div class="stat-card-value text-green">${fmtNum(stats.totalT4)}</div>
-      <div class="stat-card-sub">${t('stat.kpTotal')}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-label">${t('stat.deaths')}</div>
-      <div class="stat-card-value text-red">${fmtNum(stats.totalDeaths)}</div>
-      <div class="stat-card-sub">${t('stat.kpTotal')}</div>
-    </div>
+    ${statCard(t('stat.kp'),     'text-purple', stats.totalKp,     d ? stats.deltaKp     : null)}
+    ${statCard(t('stat.t5'),     'text-orange', stats.totalT5,     d ? stats.deltaT5     : null)}
+    ${statCard(t('stat.t4'),     'text-green',  stats.totalT4,     d ? stats.deltaT4     : null)}
+    ${statCard(t('stat.deaths'), 'text-red',    stats.totalDeaths, d ? stats.deltaDeaths : null)}
     <div class="stat-card">
       <div class="stat-card-label">${t('stat.topKp')}</div>
       <div class="stat-card-value name-value text-purple">${stats.topKp?.name ?? '—'}</div>
-      <div class="stat-card-sub">${fmtNum(stats.topKp?.dKp ?? 0)} KP</div>
+      <div class="stat-card-sub">${fmtNum(stats.topKp?.kp ?? 0)} KP${d ? ` <span style="color:var(--green);font-size:11px">+${fmtNum(stats.topKp?.dKp ?? 0)}</span>` : ''}</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">${t('stat.topT5')}</div>
       <div class="stat-card-value name-value text-orange">${stats.topT5?.name ?? '—'}</div>
-      <div class="stat-card-sub">${fmtNum(stats.topT5?.dT5kills ?? 0)} T5</div>
+      <div class="stat-card-sub">${fmtNum(stats.topT5?.t5kills ?? 0)} T5${d ? ` <span style="color:var(--green);font-size:11px">+${fmtNum(stats.topT5?.dT5kills ?? 0)}</span>` : ''}</div>
     </div>
   `;
 }
